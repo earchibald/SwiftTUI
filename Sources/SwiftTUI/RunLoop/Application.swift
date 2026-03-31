@@ -39,6 +39,10 @@ public class Application {
 
     var stdInSource: DispatchSourceRead?
 
+    /// Called for every character event, after the focused control has had a chance to handle it.
+    /// Use this to implement global hotkeys (e.g. playback controls, tab switching).
+    public var keyHandler: ((Character) -> Void)?
+
     public enum RunLoopType {
         /// The default option, using Dispatch for the main run loop.
         case dispatch
@@ -129,6 +133,7 @@ public class Application {
                 stop()
             } else {
                 window.firstResponder?.handleEvent(char)
+                keyHandler?(char)
             }
         }
     }
