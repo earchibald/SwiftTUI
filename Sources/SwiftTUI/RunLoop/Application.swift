@@ -77,7 +77,13 @@ public class Application {
 
         switch runLoopType {
         case .dispatch:
-            dispatchMain()
+            // dispatch_main() calls abort() when not invoked from the pthread main
+            // thread. Swift concurrency tasks run on the main *queue* but may not be
+            // on the actual main thread (pthread_main_np()), causing a SIGTRAP when
+            // Application.start() is called from an AsyncParsableCommand.
+            // RunLoop.main.run() processes the same dispatch sources without that
+            // restriction.
+            RunLoop.main.run()
         #if os(macOS)
         case .cocoa:
             NSApplication.shared.setActivationPolicy(.accessory)
