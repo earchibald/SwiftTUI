@@ -38,6 +38,8 @@ public class Application {
     }
 
     var stdInSource: DispatchSourceRead?
+    private var sigWinChSource: DispatchSourceSignal?
+    private var sigIntSource: DispatchSourceSignal?
 
     /// Called for every character event, after the focused control has had a chance to handle it.
     /// Use this to implement global hotkeys (e.g. playback controls, tab switching).
@@ -69,21 +71,28 @@ public class Application {
         let sigWinChSource = DispatchSource.makeSignalSource(signal: SIGWINCH, queue: .main)
         sigWinChSource.setEventHandler(qos: .default, flags: [], handler: self.handleWindowSizeChange)
         sigWinChSource.resume()
+        self.sigWinChSource = sigWinChSource
 
         signal(SIGINT, SIG_IGN)
         let sigIntSource = DispatchSource.makeSignalSource(signal: SIGINT, queue: .main)
         sigIntSource.setEventHandler(qos: .default, flags: [], handler: self.stop)
         sigIntSource.resume()
+        self.sigIntSource = sigIntSource
 
         switch runLoopType {
         case .dispatch:
-            // dispatch_main() calls abort() when not invoked from the pthread main
-            // thread. Swift concurrency tasks run on the main *queue* but may not be
-            // on the actual main thread (pthread_main_np()), causing a SIGTRAP when
-            // Application.start() is called from an AsyncParsableCommand.
-            // RunLoop.main.run() processes the same dispatch sources without that
-            // restriction.
-            RunLoop.main.run()
+            // Do not call dispatch_main() or RunLoop.main.run() here.
+            // dispatch_main() aborts when not on the pthread main thread, which breaks
+            // Swift concurrency (AsyncParsableCommand) entry points.
+            // RunLoop.main.run() re-enters the already-running main run loop and returns
+            // immediately in that context.
+            //
+            // Instead, callers that use Swift concurrency should suspend via
+            // withUnsafeContinuation after calling start() — the ArgumentParser-managed
+            // run loop on thread #1 drives the dispatch sources. Callers that own the
+            // main thread directly (e.g. a plain ParsableCommand) should call
+            // dispatchMain() themselves after start() returns.
+            break
         #if os(macOS)
         case .cocoa:
             NSApplication.shared.setActivationPolicy(.accessory)
