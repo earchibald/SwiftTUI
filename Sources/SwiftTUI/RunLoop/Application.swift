@@ -41,6 +41,12 @@ public class Application {
     private var sigWinChSource: DispatchSourceSignal?
     private var sigIntSource: DispatchSourceSignal?
 
+    /// True when the focused control is a text field — use this in keyHandler
+    /// to suppress global hotkeys while the user is typing.
+    public var isTextInputActive: Bool {
+        window.firstResponder?.isTextInput ?? false
+    }
+
     /// Called for every character event, after the focused control has had a chance to handle it.
     /// Use this to implement global hotkeys (e.g. playback controls, tab switching).
     public var keyHandler: ((Character) -> Void)?

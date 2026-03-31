@@ -11,6 +11,10 @@ class Control: LayerDrawing {
     var window: Window?
     private(set) lazy var layer: Layer = makeLayer()
 
+    /// True when this control accepts free-form text input (e.g. TextField).
+    /// Used by Application.isTextInputActive to suppress global hotkeys while typing.
+    var isTextInput: Bool { false }
+
     var root: Control { parent?.root ?? self }
 
     func addSubview(_ view: Control, at index: Int) {

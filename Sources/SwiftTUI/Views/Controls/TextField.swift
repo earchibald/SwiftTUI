@@ -80,6 +80,7 @@ public struct TextField: View, PrimitiveView {
             return Cell(char: text[text.index(text.startIndex, offsetBy: position.column.intValue)])
         }
 
+        override var isTextInput: Bool { true }
         override var selectable: Bool { true }
 
         override func becomeFirstResponder() {
